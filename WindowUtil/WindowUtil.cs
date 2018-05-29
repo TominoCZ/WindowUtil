@@ -1,33 +1,73 @@
 ﻿using System;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
-namespace WindowUtil
+namespace WindowUtils
 {
-    public class WindowTransformer
+    public static class WindowUtil
     {
-         public static void MoveBehindIcons(IntPtr windowHandle)
+        public static void SetAsWallpaper(this Form form)
         {
-            IntPtr window = W32.FindWindow("Progman", (string)null);
-            IntPtr result = IntPtr.Zero;
-            int num1 = 1324;
-            IntPtr wParam = new IntPtr(0);
-            IntPtr zero = IntPtr.Zero;
-            int num2 = 0;
-            int num3 = 1000;
-            W32.SendMessageTimeout(window, (uint)num1, wParam, zero, (W32.SendMessageTimeoutFlags)num2, (uint)num3, out result);
+            W32.SendMessageTimeout(W32.FindWindow("Progman", null), 0, new IntPtr(0), IntPtr.Zero, W32.SendMessageTimeoutFlags.SMTO_NORMAL, 1000, out var result);
+
             IntPtr workerw = IntPtr.Zero;
-            W32.EnumWindows((W32.EnumWindowsProc)((tophandle, topparamhandle) =>
+            W32.EnumWindows((tophandle, topparamhandle) =>
             {
                 if (W32.FindWindowEx(tophandle, IntPtr.Zero, "SHELLDLL_DefView", IntPtr.Zero) != IntPtr.Zero)
                     workerw = W32.FindWindowEx(IntPtr.Zero, tophandle, "WorkerW", IntPtr.Zero);
+
                 return true;
-            }), IntPtr.Zero);
+            }, IntPtr.Zero);
 
             IntPtr dc = W32.GetDCEx(workerw, IntPtr.Zero, (W32.DeviceContextValues)0x403);
             W32.ReleaseDC(workerw, dc);
 
-            W32.SetParent(windowHandle, workerw);
+            if (W32.GetParent(form.Handle) != workerw)
+            {
+                form.Location = PointToWalpaper(form.Location);
+
+                W32.SetParent(form.Handle, workerw);
+            }
+        }
+
+        public static void SetAsDesktopWindow(this Form form)
+        {
+            IntPtr window = W32.GetDesktopWindow();
+
+            if (W32.GetParent(form.Handle) == window)
+                return;
+
+            var p = form.Location;
+
+            W32.SetParent(form.Handle, window);
+
+            form.Location = p;
+        }
+
+        /// <summary>
+        /// Converts a screen Point to a Point on the wallpaper.
+        /// This is due to the different start points between these layers.
+        /// Screen(Desktop) position is relative to your main monitor's start point(0,0), while the position on the wallpaper is relative to the left-most monitor's start point
+        /// </summary>
+        /// <returns></returns>
+        private static Point PointToWalpaper(Point p)
+        {
+            var offsetX = 0;
+            var offsetY = 0;
+
+            foreach (var s in Screen.AllScreens)
+            {
+                if (s.Bounds.Location.X <= p.X)
+                    offsetX -= s.Bounds.Location.X;
+                if (s.Bounds.Location.Y <= p.Y)
+                    offsetY -= s.Bounds.Location.Y;
+            }
+
+            p.Offset(offsetX, offsetY);
+
+            return p;
         }
     }
 
@@ -541,7 +581,6 @@ namespace WindowUtil
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
-
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpWindowText, int nMaxCount);
 
@@ -599,7 +638,6 @@ namespace WindowUtil
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
-
 
         /// <summary>
         /// Changes an attribute of the specified window. The function also sets the 32-bit (long) value at the specified offset into the extra window memory.
