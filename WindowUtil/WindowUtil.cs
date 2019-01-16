@@ -10,7 +10,7 @@ namespace WindowUtils
     {
         public static void SetAsWallpaper(this Form form)
         {
-            W32.SendMessageTimeout(W32.FindWindow("Progman", null), 0, new IntPtr(0), IntPtr.Zero, W32.SendMessageTimeoutFlags.SMTO_NORMAL, 1000, out var result);
+            W32.SendMessageTimeout(W32.FindWindow("Progman", null), 0x052C, new IntPtr(0), IntPtr.Zero, W32.SendMessageTimeoutFlags.SMTO_NORMAL, 1000, out var result);
 
             IntPtr workerw = IntPtr.Zero;
             W32.EnumWindows((tophandle, topparamhandle) =>
@@ -21,15 +21,7 @@ namespace WindowUtils
                 return true;
             }, IntPtr.Zero);
 
-            IntPtr dc = W32.GetDCEx(workerw, IntPtr.Zero, (W32.DeviceContextValues)0x403);
-            W32.ReleaseDC(workerw, dc);
-
-            if (W32.GetParent(form.Handle) != workerw)
-            {
-                form.Location = PointToWalpaper(form.Location);
-
-                W32.SetParent(form.Handle, workerw);
-            }
+            W32.SetParent(form.Handle, workerw);
         }
 
         public static void SetAsDesktopWindow(this Form form)
@@ -52,7 +44,7 @@ namespace WindowUtils
         /// Screen(Desktop) position is relative to your main monitor's start point(0,0), while the position on the wallpaper is relative to the left-most monitor's start point
         /// </summary>
         /// <returns></returns>
-        private static Point PointToWalpaper(Point p)
+        private static Point PointToWallpaper(Point p)
         {
             var offsetX = 0;
             var offsetY = 0;
