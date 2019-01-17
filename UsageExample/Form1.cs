@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 using WindowUtils;
 
@@ -15,6 +16,8 @@ namespace UsageExample
         {
             //this makes the form appear as a wallpaper
             this.SetAsWallpaper();
+
+			Location = new Point(1800, 0);
 
             //this makes the form appear as a regular desktop window
             //this.SetAsDesktopWindow();

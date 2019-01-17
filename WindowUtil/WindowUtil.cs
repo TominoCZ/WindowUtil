@@ -8,43 +8,72 @@ namespace WindowUtils
 {
     public static class WindowUtil
     {
-        public static void SetAsWallpaper(this Form form)
-        {
-            W32.SendMessageTimeout(W32.FindWindow("Progman", null), 0x052C, new IntPtr(0), IntPtr.Zero, W32.SendMessageTimeoutFlags.SMTO_NORMAL, 1000, out var result);
+		public static void SetAsWallpaper(this Form form)
+		{
+			W32.SendMessageTimeout(W32.FindWindow("Progman", null), 0x052C, new IntPtr(0), IntPtr.Zero, W32.SendMessageTimeoutFlags.SMTO_NORMAL, 1000, out var result);
 
-            IntPtr workerw = IntPtr.Zero;
-            W32.EnumWindows((tophandle, topparamhandle) =>
-            {
-                if (W32.FindWindowEx(tophandle, IntPtr.Zero, "SHELLDLL_DefView", IntPtr.Zero) != IntPtr.Zero)
-                    workerw = W32.FindWindowEx(IntPtr.Zero, tophandle, "WorkerW", IntPtr.Zero);
+			IntPtr workerw = IntPtr.Zero;
+			W32.EnumWindows((tophandle, topparamhandle) =>
+			{
+				if (W32.FindWindowEx(tophandle, IntPtr.Zero, "SHELLDLL_DefView", IntPtr.Zero) != IntPtr.Zero)
+					workerw = W32.FindWindowEx(IntPtr.Zero, tophandle, "WorkerW", IntPtr.Zero);
 
-                return true;
-            }, IntPtr.Zero);
+				return true;
+			}, IntPtr.Zero);
 
-            W32.SetParent(form.Handle, workerw);
-        }
+			W32.SetParent(form.Handle, workerw);
+		}
 
-        public static void SetAsDesktopWindow(this Form form)
-        {
-            IntPtr window = W32.GetDesktopWindow();
+		public static void SetAsDesktopWindow(this Form form)
+		{
+			IntPtr window = W32.GetDesktopWindow();
 
-            if (W32.GetParent(form.Handle) == window)
-                return;
+			if (W32.GetParent(form.Handle) == window)
+				return;
 
-            var p = form.Location;
+			var p = form.Location;
 
-            W32.SetParent(form.Handle, window);
+			W32.SetParent(form.Handle, window);
 
-            form.Location = p;
-        }
+			form.Location = p;
+		}
+	    public static void SetAsWallpaper(IntPtr wndHandle)
+	    {
+		    W32.SendMessageTimeout(W32.FindWindow("Progman", null), 0x052C, new IntPtr(0), IntPtr.Zero, W32.SendMessageTimeoutFlags.SMTO_NORMAL, 1000, out var result);
 
-        /// <summary>
-        /// Converts a screen Point to a Point on the wallpaper.
-        /// This is due to the different start points between these layers.
-        /// Screen(Desktop) position is relative to your main monitor's start point(0,0), while the position on the wallpaper is relative to the left-most monitor's start point
-        /// </summary>
-        /// <returns></returns>
-        private static Point PointToWallpaper(Point p)
+		    IntPtr workerw = IntPtr.Zero;
+		    W32.EnumWindows((tophandle, topparamhandle) =>
+		    {
+			    if (W32.FindWindowEx(tophandle, IntPtr.Zero, "SHELLDLL_DefView", IntPtr.Zero) != IntPtr.Zero)
+				    workerw = W32.FindWindowEx(IntPtr.Zero, tophandle, "WorkerW", IntPtr.Zero);
+
+			    return true;
+		    }, IntPtr.Zero);
+
+		    W32.SetParent(wndHandle, workerw);
+	    }
+
+	    public static void SetAsDesktopWindow(ref Point wndLoc, IntPtr wndHandle)
+	    {
+		    IntPtr window = W32.GetDesktopWindow();
+
+		    if (W32.GetParent(wndHandle) == window)
+			    return;
+
+		    var p = wndLoc;
+
+		    W32.SetParent(wndHandle, window);
+
+		    wndLoc = p;
+	    }
+
+		/// <summary>
+		/// Converts a screen Point to a Point on the wallpaper.
+		/// This is due to the different start points between these layers.
+		/// Screen(Desktop) position is relative to your main monitor's start point(0,0), while the position on the wallpaper is relative to the left-most monitor's start point
+		/// </summary>
+		/// <returns></returns>
+		private static Point PointToWallpaper(Point p)
         {
             var offsetX = 0;
             var offsetY = 0;
